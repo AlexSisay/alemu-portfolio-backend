@@ -11,7 +11,7 @@ router.post('/login', async (req, res) => {
     }
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({
-        message: 'Database connecting. Wait 15–30 seconds and retry. If this persists, check MONGODB_URI and MongoDB Atlas Network Access.'
+        message: 'Database not connected. In MongoDB Atlas: Network Access → Add IP Address → Allow Access from Anywhere (0.0.0.0/0). Then wait 1–2 min and retry.'
       });
     }
     const { username, password } = req.body;

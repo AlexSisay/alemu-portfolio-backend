@@ -334,13 +334,28 @@ app.listen(PORT, () => {
   console.log(`AI Available: ${!!(gemini || openai)}`);
 });
 
-if (process.env.MONGODB_URI) {
-  mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000 })
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => {
-      console.error('MongoDB connection error:', err);
-      console.error('Auth/blog endpoints will return 503 until MongoDB connects.');
-    });
-} else {
-  console.warn('MONGODB_URI not set - auth and blog APIs will not work');
-} 
+async function connectMongo(retries = 3) {
+  if (!process.env.MONGODB_URI) {
+    console.warn('MONGODB_URI not set - auth and blog APIs will not work');
+    return;
+  }
+  for (let i = 0; i < retries; i++) {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 30000,
+        connectTimeoutMS: 30000
+      });
+      console.log('MongoDB connected');
+      return;
+    } catch (err) {
+      console.error(`MongoDB connection attempt ${i + 1}/${retries} failed:`, err.message);
+      if (i < retries - 1) {
+        console.log('Retrying in 5 seconds...');
+        await new Promise(r => setTimeout(r, 5000));
+      } else {
+        console.error('MongoDB connection failed. Check MONGODB_URI and Atlas Network Access (add 0.0.0.0/0).');
+      }
+    }
+  }
+}
+connectMongo(); 
