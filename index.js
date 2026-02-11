@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
 require('dotenv').config();
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,6 +18,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // AI Integration - Multiple Providers
 let aiProvider = process.env.AI_PROVIDER || 'gemini';
+// Free-tier models: gemini-2.5-flash, gemini-2.5-flash-lite, gemini-1.5-flash
+let geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 // Initialize AI clients based on provider
 let openai = null;
@@ -34,63 +37,113 @@ if (aiProvider === 'openai' && process.env.OPENAI_API_KEY) {
   console.log('No AI provider configured, using fallback responses');
 }
 
-// CV Data - This would be extracted from your actual CVs
+// CV Data - Updated Jan 2026
 const cvData = {
   personal: {
     name: "Alemu Sisay Nigru",
-    title: "AI Researcher & Academic",
+    title: "AI Research Scientist & PhD Candidate in AI in Medicine",
     email: "alemu.nigru@unibs.it",
     location: "Italy",
-    phone: "+39 3518443838",
-    linkedin: "linkedin.com/in/alemu-sisay",
+    phone: "+39 351 844 3838",
+    linkedin: "linkedin.com/in/alemu-sisay-nigru-23612514b",
     github: "github.com/alexsisay"
   },
   education: [
     {
       degree: "PhD, Artificial Intelligence in Medicine",
-      institution: "University of Brescia",
-      year: "2022-2025",
-      focus: "Artificial Intelligence, Machine Learning, Medical Imaging"
+      institution: "University of Brescia, Italy",
+      year: "2022-2025 (Expected)",
+      focus: "AI-driven clinical decision support for personalized management of low back pain"
     },
     {
       degree: "MSc, Communication Technologies and Multimedia",
-      institution: "University of Brescia",
+      institution: "University of Brescia, Italy",
       year: "2019-2022",
-      focus: "Multimedia Engineering, AI, Computer Vision"
+      focus: "110 cum laude/110 — Deep learning–based neuroimage retrieval"
+    },
+    {
+      degree: "BSc, Electrical and Computer Engineering",
+      institution: "University of Gondar, Ethiopia",
+      year: "2012-2016",
+      focus: "3.89/4.00 — Gold Medalist — Fingerprint-based Attendance System using ASP.NET and C#"
     }
   ],
   experience: [
     {
-      title: "AI Research Scientist",
-      company: "Research Institution",
-      period: "2022-Present",
-      description: "Leading research in AI and machine learning applications"
+      title: "Visiting PhD Researcher",
+      company: "Video Lab, New York University (NYU), USA",
+      period: "Apr 2025 – Oct 2025",
+      description: "Developed deep learning models for lumbar spine pathology detection from MRI. Conducted training, evaluation, and benchmarking of computer vision models on clinical datasets. Collaborated with multidisciplinary teams on imaging pipelines and model interpretability."
     },
     {
-      title: "Teaching Assistant",
-      company: "University",
-      period: "2020-2022",
-      description: "Assisted in teaching AI and computer science courses"
+      title: "Visiting PhD Researcher",
+      company: "Center for Digital Health and Implementation Science (CDHI), Ethiopia",
+      period: "Sep 2024 – Dec 2024",
+      description: "Deployed AI model APIs and contributed to frontend integration for clinical applications. Adapted AI tools for resource-constrained healthcare environments. Supported real-world validation of AI-based clinical decision support tools."
+    },
+    {
+      title: "Assistant Lecturer",
+      company: "Department of Electrical & Computer Engineering, University of Gondar, Ethiopia",
+      period: "Aug 2016 – Aug 2019",
+      description: "Taught undergraduate courses in C++ programming, digital logic design, circuit theory, and communication systems. Led community-based technology transfer and capacity-building initiatives."
     }
   ],
   skills: [
-    "Machine Learning", "Deep Learning", "Python", "TensorFlow", "PyTorch",
-    "Natural Language Processing", "Computer Vision", "Data Science",
-    "Research Methodology", "Academic Writing"
+    "Python", "C++", "C#", "Matlab", "Java",
+    "PyTorch", "TensorFlow", "Scikit-learn",
+    "DICOM", "NIfTI", "PyDICOM", "Radiology AI",
+    "MRI Segmentation & Classification", "CNNs", "Transformers",
+    "Image Segmentation", "Feature Extraction",
+    "NumPy", "OpenCV", "Git",
+    "Medical Imaging AI", "Healthcare AI", "Computer Vision", "Risk Prediction"
   ],
   publications: [
     {
-      title: "Advanced AI Applications in Healthcare",
-      journal: "AI Research Journal",
+      title: "External validation of SpineNetV2 on a comprehensive set of radiological features for grading lumbosacral disc pathologies",
+      journal: "North American Spine Society Journal (NASSJ)",
       year: "2024",
-      doi: "10.1000/example"
+      doi: "Peer-Reviewed"
+    },
+    {
+      title: "Toward a Clinically Integrated AI Framework for Personalized Spine Care",
+      journal: "SSRN Preprint",
+      year: "Under Review",
+      doi: "Preprint"
+    },
+    {
+      title: "Rewiring Development: Leveraging Adult Brain Priors for Enhancing Infant Brain MRI Segmentation",
+      journal: "arXiv Preprint",
+      year: "Preprint",
+      doi: "Co-authored with M. Svanera et al."
+    },
+    {
+      title: "LumbarAI: A Swin3D Transformer-Based Framework for Computer-Aided Diagnosis of Lumbar Spine Disorders from MRI",
+      journal: "Under Review",
+      year: "Under Review",
+      doi: "Submitted"
+    },
+    {
+      title: "Integrating Radiological Severity and Patient-Reported Outcomes for Risk Factor Identification in Spine Health",
+      journal: "Under Review",
+      year: "Under Review",
+      doi: "Submitted"
     }
   ],
   projects: [
     {
-      name: "AI-Powered Healthcare System",
-      description: "Developed machine learning models for disease prediction",
-      technologies: ["Python", "TensorFlow", "Scikit-learn"]
+      name: "Spine MRI Analysis with Deep Learning",
+      description: "Developed CNN and transformer-based models for segmentation and grading of lumbar spine pathologies.",
+      technologies: ["PyTorch", "Transformers", "CNNs", "MRI", "Computer Vision"]
+    },
+    {
+      name: "Multimodal Risk Stratification in Spine Health",
+      description: "Integrated radiological severity with psychosocial PROMs to identify patient risk profiles and support personalized treatment strategies.",
+      technologies: ["Deep Learning", "Clinical Decision Support", "PROMs"]
+    },
+    {
+      name: "Brain MRI Tissue Segmentation",
+      description: "Built automated pipelines for segmentation of CSF, GM, WM, basal ganglia, and cerebrum from T1/T2 MRI scans.",
+      technologies: ["PyTorch", "Medical Imaging", "Segmentation"]
     }
   ]
 };
@@ -113,12 +166,20 @@ async function getAIResponse(userQuestion) {
   User question: ${userQuestion}`;
 
   try {
-    // Try Gemini first (if configured)
+    // Try Gemini first (if configured) - uses free-tier model (gemini-2.5-flash)
     if (gemini) {
-      const model = gemini.getGenerativeModel({ model: "gemini-pro" });
-      const result = await model.generateContent(systemPrompt);
-      const response = await result.response;
-      return response.text();
+      const modelsToTry = [geminiModel, 'gemini-1.5-flash', 'gemini-pro'];
+      for (const modelName of modelsToTry) {
+        try {
+          const model = gemini.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(systemPrompt);
+          const response = await result.response;
+          return response.text();
+        } catch (modelErr) {
+          if (modelName === modelsToTry[modelsToTry.length - 1]) throw modelErr;
+          console.warn(`Model ${modelName} failed, trying next:`, modelErr.message);
+        }
+      }
     }
     
     // Fallback to OpenAI (if configured)
@@ -149,27 +210,27 @@ function getFallbackResponse(question) {
   const lowerQuestion = question.toLowerCase();
   
   if (lowerQuestion.includes('research') || lowerQuestion.includes('focus')) {
-    return "Alemu's research focuses on Artificial Intelligence in Medicine, particularly in medical imaging and healthcare applications. He is currently pursuing a PhD at the University of Brescia in AI for medical applications.";
+    return "Alemu's research focuses on AI-driven clinical decision support for personalized management of low back pain. He specializes in spine MRI analysis, multimodal data integration, and risk prediction using imaging and patient-reported outcomes. His PhD at the University of Brescia explores AI for spinal pathology diagnosis.";
   }
   
   if (lowerQuestion.includes('education') || lowerQuestion.includes('degree')) {
-    return "Alemu holds an MSc in Communication Technologies and Multimedia from the University of Brescia (2019-2022) and is currently pursuing a PhD in Artificial Intelligence in Medicine at the same university (2022-2025).";
+    return "Alemu holds a BSc in Electrical and Computer Engineering from the University of Gondar (2012-2016, Gold Medalist), an MSc in Communication Technologies and Multimedia from the University of Brescia (2019-2022, 110 cum laude), and is completing his PhD in Artificial Intelligence in Medicine at the University of Brescia (2022-2025).";
   }
   
   if (lowerQuestion.includes('skill') || lowerQuestion.includes('expertise')) {
-    return "Alemu's technical skills include Machine Learning, Deep Learning, Python, TensorFlow, PyTorch, Natural Language Processing, Computer Vision, and Data Science. He specializes in AI applications for healthcare.";
+    return "Alemu's technical skills include Python, PyTorch, TensorFlow, Scikit-learn, medical imaging (DICOM, NIfTI), CNNs, Transformers, MRI segmentation and classification. He works in Medical Imaging AI, Healthcare AI, Computer Vision, and Risk Prediction.";
   }
   
   if (lowerQuestion.includes('contact') || lowerQuestion.includes('email')) {
-    return "You can contact Alemu at alemu.nigru@unibs.it or through his LinkedIn profile at linkedin.com/in/alemu-sisay. He's based in Italy and available for research collaborations.";
+    return "You can contact Alemu at alemu.nigru@unibs.it or +39 351 844 3838. His LinkedIn is linkedin.com/in/alemu-sisay-nigru-23612514b. He's based in Italy and available for research collaborations.";
   }
   
   if (lowerQuestion.includes('publication') || lowerQuestion.includes('paper')) {
-    return "Alemu has published research papers in AI and healthcare applications. His work focuses on developing AI solutions for medical imaging and disease prediction.";
+    return "Alemu has a peer-reviewed paper in NASSJ (2024) on SpineNetV2 validation for lumbosacral disc pathologies. He also has preprints on SSRN and arXiv, plus papers under review on LumbarAI (Swin3D framework) and integrating radiological severity with patient-reported outcomes for spine health.";
   }
   
   if (lowerQuestion.includes('project')) {
-    return "Alemu has worked on several AI projects, including an AI-powered healthcare system for disease prediction using machine learning models developed with Python, TensorFlow, and Scikit-learn.";
+    return "Alemu's key projects include: Spine MRI Analysis with deep learning (CNN/transformer models for lumbar pathology grading), Multimodal Risk Stratification in spine health (integrating imaging with PROMs), and Brain MRI Tissue Segmentation (automated pipelines for CSF, GM, WM segmentation).";
   }
   
   return "I apologize, but I'm having trouble accessing my knowledge base right now. Please try asking about Alemu's research focus, education, skills, publications, or contact information. You can also reach out to him directly at alemu.nigru@unibs.it.";
@@ -208,66 +269,44 @@ app.post('/api/ai-chat', async (req, res) => {
 app.get('/api/ai-status', (req, res) => {
   res.json({
     provider: aiProvider,
+    model: aiProvider === 'gemini' ? geminiModel : (aiProvider === 'openai' ? 'gpt-3.5-turbo' : 'fallback'),
     available: !!(gemini || openai),
     fallback: !(gemini || openai)
   });
 });
 
-// Blog data
-const blogPosts = [
-  {
-    id: 1,
-    title: "The Future of AI in Academic Research",
-    excerpt: "Exploring how artificial intelligence is transforming research methodologies across disciplines...",
-    content: "Artificial Intelligence is revolutionizing the way we conduct academic research. From data analysis to literature reviews, AI tools are becoming indispensable for researchers worldwide. In this post, I'll share insights from my own research experience and discuss emerging trends in AI-powered academic workflows.",
-    author: "Alemu Sisay Nigru",
-    date: "2024-01-15",
-    tags: ["AI", "Research", "Academic"]
-  },
-  {
-    id: 2,
-    title: "Machine Learning Applications in Healthcare",
-    excerpt: "A comprehensive overview of ML applications in modern healthcare systems...",
-    content: "Healthcare is one of the most promising domains for machine learning applications. From diagnostic imaging to drug discovery, ML algorithms are helping medical professionals make better decisions and improve patient outcomes. This post explores current applications and future possibilities.",
-    author: "Alemu Sisay Nigru",
-    date: "2024-01-10",
-    tags: ["ML", "Healthcare", "AI"]
-  },
-  {
-    id: 3,
-    title: "Building Effective AI Research Teams",
-    excerpt: "Lessons learned from leading AI research projects and managing diverse teams...",
-    content: "Success in AI research often depends on having the right team composition and management approach. In this post, I share strategies for building effective AI research teams, including skill diversity, communication practices, and project management techniques.",
-    author: "Alemu Sisay Nigru",
-    date: "2024-01-05",
-    tags: ["Leadership", "Research", "Team Management"]
-  }
-];
-
-app.get('/api/blog', (req, res) => {
-  res.json(blogPosts);
-});
-
-app.get('/api/blog/:id', (req, res) => {
-  const post = blogPosts.find(p => p.id === parseInt(req.params.id));
-  if (!post) {
-    return res.status(404).json({ error: 'Post not found' });
-  }
-  res.json(post);
-});
-
 // Dashboard analytics
-app.get('/api/dashboard', (req, res) => {
+app.get('/api/dashboard', async (req, res) => {
+  let blogCount = 0;
+  try {
+    const Blog = require('./models/Blog');
+    blogCount = await Blog.countDocuments();
+  } catch (e) {
+    // MongoDB may not be connected yet
+  }
   const analytics = {
     totalPublications: cvData.publications.length,
     totalProjects: cvData.projects.length,
-    yearsOfExperience: 5,
-    blogPosts: blogPosts.length,
+    yearsOfExperience: 8,
+    blogPosts: blogCount,
     skills: cvData.skills.length,
-    researchAreas: ["AI", "ML", "Healthcare", "Education"]
+    researchAreas: ["Medical Imaging AI", "Healthcare AI", "Computer Vision", "Risk Prediction"]
   };
   res.json(analytics);
 });
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected'))
+.catch((err) => console.error('MongoDB connection error:', err));
+
+// Mount new API routes
+app.use('/api/admin', require('./routes/auth'));
+app.use('/api/blog', require('./routes/blog'));
+app.use('/api/content', require('./routes/content'));
 
 // Serve static files from React build
 app.use(express.static(path.join(__dirname, '../client/build')));
