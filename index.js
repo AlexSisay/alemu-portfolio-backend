@@ -316,30 +316,27 @@ app.get('/api/dashboard', async (req, res) => {
   res.json(analytics);
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch((err) => console.error('MongoDB connection error:', err));
+// Connect to MongoDB (optional for API-only deployment)
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('MongoDB connected'))
+    .catch((err) => console.error('MongoDB connection error:', err));
+} else {
+  console.warn('MONGODB_URI not set - auth and blog APIs will not work');
+}
 
-// Mount new API routes
+// Mount API routes
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api/blog', require('./routes/blog'));
 app.use('/api/content', require('./routes/content'));
 
-// Serve static files from React build
-app.use(express.static(path.join(__dirname, '../client/build')));
-
-// Catch all handler for React routing
+// API-only: no static files (frontend is on GitHub Pages)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  res.status(404).json({ error: 'Not found', path: req.path });
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`AI Provider: ${aiProvider}`);
   console.log(`AI Available: ${!!(gemini || openai)}`);
-  console.log(`AI Agent ready for questions about Alemu's experience`);
 }); 
