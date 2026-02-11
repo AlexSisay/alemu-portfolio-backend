@@ -10,9 +10,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(compression());
-app.use(cors());
+const corsOrigins = [
+  'https://alexsisay.github.io',
+  'https://alexsisay.github.io/alemu-portfolio',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000'
+];
+if (process.env.CORS_ORIGIN) corsOrigins.push(process.env.CORS_ORIGIN);
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
