@@ -9,18 +9,31 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+// Middleware - CORS first for preflight
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowed = [
+      'https://alexsisay.github.io',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
+    ];
+    if (process.env.CORS_ORIGIN) allowed.push(process.env.CORS_ORIGIN);
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  optionsSuccessStatus: 204
+}));
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(compression());
-const corsOrigins = [
-  'https://alexsisay.github.io',
-  'https://alexsisay.github.io/alemu-portfolio',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000'
-];
-if (process.env.CORS_ORIGIN) corsOrigins.push(process.env.CORS_ORIGIN);
-app.use(cors({ origin: corsOrigins }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
