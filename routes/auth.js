@@ -10,7 +10,9 @@ router.post('/login', async (req, res) => {
       return res.status(503).json({ message: 'Server misconfigured: JWT_SECRET not set' });
     }
     if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: 'Database not connected yet. Please retry in a moment.' });
+      return res.status(503).json({
+        message: 'Database connecting. Wait 15–30 seconds and retry. If this persists, check MONGODB_URI and MongoDB Atlas Network Access.'
+      });
     }
     const { username, password } = req.body;
     const user = await User.findOne({ username });

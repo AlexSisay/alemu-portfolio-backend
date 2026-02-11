@@ -263,7 +263,8 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     timestamp: new Date().toISOString(),
     aiProvider: aiProvider,
-    aiAvailable: !!(gemini || openai)
+    aiAvailable: !!(gemini || openai),
+    mongoConnected: mongoose.connection.readyState === 1
   });
 });
 
@@ -326,26 +327,20 @@ app.get('*', (req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
 });
 
-// Start server only after MongoDB connects (when MONGODB_URI is set)
-function startServer() {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`AI Provider: ${aiProvider}`);
-    console.log(`AI Available: ${!!(gemini || openai)}`);
-  });
-}
+// Start server immediately so Render health check passes; connect MongoDB in background
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`AI Provider: ${aiProvider}`);
+  console.log(`AI Available: ${!!(gemini || openai)}`);
+});
 
 if (process.env.MONGODB_URI) {
-  mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
-    .then(() => {
-      console.log('MongoDB connected');
-      startServer();
-    })
+  mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000 })
+    .then(() => console.log('MongoDB connected'))
     .catch((err) => {
       console.error('MongoDB connection error:', err);
-      process.exit(1);
+      console.error('Auth/blog endpoints will return 503 until MongoDB connects.');
     });
 } else {
   console.warn('MONGODB_URI not set - auth and blog APIs will not work');
-  startServer();
 } 
