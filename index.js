@@ -316,15 +316,6 @@ app.get('/api/dashboard', async (req, res) => {
   res.json(analytics);
 });
 
-// Connect to MongoDB (optional for API-only deployment)
-if (process.env.MONGODB_URI) {
-  mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => console.error('MongoDB connection error:', err));
-} else {
-  console.warn('MONGODB_URI not set - auth and blog APIs will not work');
-}
-
 // Mount API routes
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api/blog', require('./routes/blog'));
@@ -335,8 +326,26 @@ app.get('*', (req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`AI Provider: ${aiProvider}`);
-  console.log(`AI Available: ${!!(gemini || openai)}`);
-}); 
+// Start server only after MongoDB connects (when MONGODB_URI is set)
+function startServer() {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`AI Provider: ${aiProvider}`);
+    console.log(`AI Available: ${!!(gemini || openai)}`);
+  });
+}
+
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
+    .then(() => {
+      console.log('MongoDB connected');
+      startServer();
+    })
+    .catch((err) => {
+      console.error('MongoDB connection error:', err);
+      process.exit(1);
+    });
+} else {
+  console.warn('MONGODB_URI not set - auth and blog APIs will not work');
+  startServer();
+} 
