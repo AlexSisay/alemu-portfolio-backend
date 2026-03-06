@@ -321,6 +321,7 @@ app.get('/api/dashboard', async (req, res) => {
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api/blog', require('./routes/blog'));
 app.use('/api/content', require('./routes/content'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // API-only: no static files (frontend is on GitHub Pages)
 app.get('*', (req, res) => {
