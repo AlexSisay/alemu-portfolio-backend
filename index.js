@@ -320,6 +320,7 @@ app.get('/api/dashboard', async (req, res) => {
 // Mount API routes
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api/blog', require('./routes/blog'));
+app.use('/api/publications', require('./routes/publications'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/analytics', require('./routes/analytics'));
 
