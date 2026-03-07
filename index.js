@@ -327,6 +327,8 @@ app.use('/api/publications', require('./routes/publications'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/analytics', require('./routes/analytics'));
 
+// Root route for Render health check (Render pings / by default)
+app.get('/', (req, res) => res.json({ status: 'ok', service: 'alemu-portfolio-backend' }));
 // API-only: no static files (frontend is on GitHub Pages)
 app.get('*', (req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
@@ -339,17 +341,31 @@ app.listen(PORT, () => {
   console.log(`AI Available: ${!!(gemini || openai)}`);
 });
 
+function sanitizeMongoUri(uri) {
+  const q = uri.indexOf('?');
+  const base = q === -1 ? uri : uri.slice(0, q);
+  const query = q === -1 ? '' : uri.slice(q + 1);
+  // Strip unsupported params (cause "option buffertimeoutms is not supported")
+  const params = query.split('&').filter((p) => {
+    const key = (p.split('=')[0] || '').toLowerCase();
+    return key && key !== 'buffertimeoutms' && key !== 'buffercommands';
+  });
+  let result = params.length ? `${base}?${params.join('&')}` : base;
+  // Ensure database name in path - "not authorized on admin" means URI lacked /dbname
+  // Format: mongodb+srv://user:pass@host/dbname - need /dbname before ?
+  if (/\.mongodb\.net(\?|$)/.test(result) && !/\.mongodb\.net\/[^/?]+/.test(result)) {
+    result = result.replace(/\.mongodb\.net/, '.mongodb.net/portfolio');
+  }
+  return result;
+}
+
 async function connectMongo(retries = 3) {
   if (!process.env.MONGODB_URI) {
     console.warn('MONGODB_URI not set - auth and blog APIs will not work');
     return;
   }
-  // Disable buffering to avoid "option buffertimeoutms is not supported" (MongoDB driver rejects it)
   mongoose.set('bufferCommands', false);
-  // Strip unsupported options from URI in case MONGODB_URI has them
-  let uri = process.env.MONGODB_URI;
-  uri = uri.replace(/[?&]bufferTimeoutMS=[^&]*/gi, '').replace(/[?&]buffertimeoutms=[^&]*/gi, '');
-  uri = uri.replace(/\?&+/, '?').replace(/&+$/, '').replace(/\?$/, '');
+  const uri = sanitizeMongoUri(process.env.MONGODB_URI);
   for (let i = 0; i < retries; i++) {
     try {
       await mongoose.connect(uri);
