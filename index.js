@@ -368,7 +368,7 @@ async function connectMongo(retries = 3) {
   const uri = sanitizeMongoUri(process.env.MONGODB_URI);
   for (let i = 0; i < retries; i++) {
     try {
-      await mongoose.connect(uri);
+      await mongoose.connect(uri, { useFindAndModify: false });
       console.log('MongoDB connected');
       return;
     } catch (err) {
