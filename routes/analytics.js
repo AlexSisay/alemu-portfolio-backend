@@ -9,7 +9,8 @@ function getClientIp(req) {
     const first = forwarded.split(',')[0].trim();
     if (first) return first;
   }
-  return req.headers['x-real-ip'] || req.ip || req.connection?.remoteAddress || '';
+  const ip = req.headers['x-real-ip'] || req.headers['cf-connecting-ip'] || req.headers['true-client-ip'] || req.ip || req.connection?.remoteAddress || '';
+  return ip.replace(/^::ffff:/i, '');
 }
 
 // Public: Record a visit (called from frontend)
@@ -19,35 +20,39 @@ router.post('/track', async (req, res) => {
     const path = req.body?.path || req.headers['referer']?.split('?')[0] || '/';
     const userAgent = req.headers['user-agent'] || '';
 
-    let country = 'Unknown';
-    let countryCode = '';
+    let country = req.body?.country || 'Unknown';
+    let countryCode = req.body?.countryCode || '';
 
-    if (ip && ip !== '::1' && ip !== '127.0.0.1') {
-      try {
-        const https = require('https');
-        const resp = await new Promise((resolve, reject) => {
-          const url = `https://ipapi.co/${ip}/json/`;
-          https.get(url, { timeout: 3000 }, (r) => {
-            let data = '';
-            r.on('data', (chunk) => { data += chunk; });
-            r.on('end', () => {
-              try {
-                resolve(JSON.parse(data));
-              } catch {
-                resolve({});
-              }
-            });
-            r.on('error', reject);
-          }).on('error', reject);
-        });
-        if (resp && resp.country_name) {
-          country = resp.country_name;
-          countryCode = resp.country_code || '';
+    if ((country === 'Unknown' || !countryCode) && ip && ip !== '::1' && ip !== '127.0.0.1') {
+      const https = require('https');
+      const http = require('http');
+      const tryGeo = (url) => new Promise((resolve) => {
+        const lib = url.startsWith('https') ? https : http;
+        lib.get(url, { timeout: 3000 }, (r) => {
+          let data = '';
+          r.on('data', (chunk) => { data += chunk; });
+          r.on('end', () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch {
+              resolve({});
+            }
+          });
+          r.on('error', () => resolve({}));
+        }).on('error', () => resolve({}));
+      });
+      let resp = await tryGeo(`https://ipapi.co/${ip}/json/`);
+      if (resp && resp.country_name) {
+        country = resp.country_name;
+        countryCode = resp.country_code || '';
+      } else {
+        resp = await tryGeo(`http://ip-api.com/json/${ip}?fields=country,countryCode`);
+        if (resp && resp.country) {
+          country = resp.country;
+          countryCode = resp.countryCode || '';
         }
-      } catch (geoErr) {
-        console.warn('Geo lookup failed for', ip, geoErr.message);
       }
-    } else {
+    } else if (!ip || ip === '::1' || ip === '127.0.0.1') {
       country = 'Local';
       countryCode = 'LOCAL';
     }
