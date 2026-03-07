@@ -344,7 +344,9 @@ async function connectMongo(retries = 3) {
     try {
       await mongoose.connect(process.env.MONGODB_URI, {
         serverSelectionTimeoutMS: 30000,
-        connectTimeoutMS: 30000
+        connectTimeoutMS: 30000,
+        bufferCommands: true,
+        bufferTimeoutMS: 60000
       });
       console.log('MongoDB connected');
       return;

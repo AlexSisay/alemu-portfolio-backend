@@ -1,25 +1,45 @@
+#!/usr/bin/env node
 require('dotenv').config();
 const mongoose = require('mongoose');
+const readline = require('readline');
 const User = require('./models/User');
 
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(async () => {
-  const username = 'alexsisay1'; // change as desired
-  const password = 'admin123'; // change as desired
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
+function ask(question) {
+  return new Promise((resolve) => rl.question(question, resolve));
+}
+
+async function main() {
+  if (!process.env.MONGODB_URI) {
+    console.error('MONGODB_URI is not set in .env');
+    process.exit(1);
+  }
+  await mongoose.connect(process.env.MONGODB_URI);
+  const username = (await ask('Username: ')).trim();
+  if (!username) {
+    console.error('Username required');
+    process.exit(1);
+  }
+  const password = (await ask('Password: ')).trim();
+  if (!password) {
+    console.error('Password required');
+    process.exit(1);
+  }
   const existing = await User.findOne({ username });
   if (existing) {
-    console.log('Admin user already exists');
-    process.exit();
+    existing.password = password;
+    await existing.save();
+    console.log('Updated password for existing user:', username);
+  } else {
+    await User.create({ username, password });
+    console.log('Admin user created:', username);
   }
+  rl.close();
+  process.exit(0);
+}
 
-  const user = new User({ username, password });
-  await user.save();
-  console.log('Admin user created!');
-  process.exit();
-}).catch(err => {
-  console.error('MongoDB connection error:', err);
+main().catch((err) => {
+  console.error(err);
   process.exit(1);
 });
