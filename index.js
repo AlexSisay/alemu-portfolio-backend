@@ -6,6 +6,9 @@ const path = require('path');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+// Disable command buffering to avoid "option buffertimeoutms is not supported" (Mongoose passes it to driver which rejects it)
+mongoose.set('bufferCommands', false);
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -341,14 +344,15 @@ async function connectMongo(retries = 3) {
     console.warn('MONGODB_URI not set - auth and blog APIs will not work');
     return;
   }
+  // Disable buffering to avoid "option buffertimeoutms is not supported" (MongoDB driver rejects it)
+  mongoose.set('bufferCommands', false);
+  // Strip unsupported options from URI in case MONGODB_URI has them
+  let uri = process.env.MONGODB_URI;
+  uri = uri.replace(/[?&]bufferTimeoutMS=[^&]*/gi, '').replace(/[?&]buffertimeoutms=[^&]*/gi, '');
+  uri = uri.replace(/\?&+/, '?').replace(/&+$/, '').replace(/\?$/, '');
   for (let i = 0; i < retries; i++) {
     try {
-      await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 30000,
-        connectTimeoutMS: 30000,
-        bufferCommands: true,
-        bufferTimeoutMS: 60000
-      });
+      await mongoose.connect(uri);
       console.log('MongoDB connected');
       return;
     } catch (err) {
