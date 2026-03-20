@@ -325,7 +325,6 @@ app.use('/api/admin', require('./routes/auth'));
 app.use('/api/blog', require('./routes/blog'));
 app.use('/api/publications', require('./routes/publications'));
 app.use('/api/content', require('./routes/content'));
-app.use('/api/analytics', require('./routes/analytics'));
 
 // Root route for Render health check (Render pings / by default)
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'alemu-portfolio-backend' }));
